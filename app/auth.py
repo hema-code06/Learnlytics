@@ -4,6 +4,8 @@ from .. import models, schemas
 from ..database import get_db
 from ..auth import hash_password, verify_password, create_access_token
 
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -12,6 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 router = APIRouter()
+security=HTTPBearer()
 
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
@@ -80,3 +83,14 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         data={"sub": str(db_user.id)}
     )
     return {"access_token": access_token}
+
+def get_current_user(
+    credentials:HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    payload=verify_token(token)
+    
+    if payload is None:
+        raise HTTPException(status_code=400, detail="Invalid token!!")
+    
+    return payload["sub"]
