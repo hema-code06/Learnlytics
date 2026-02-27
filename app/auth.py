@@ -1,15 +1,17 @@
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from uuid import UUID
 
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security=HTTPBearer()
+security = HTTPBearer()
+
 
 def hash_password(password: str):
     return pwd_context.hash(password)
@@ -17,9 +19,6 @@ def hash_password(password: str):
 
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
-
-
-
 
 
 def create_access_token(data: dict):
@@ -37,16 +36,16 @@ def verify_token(token: str):
         return None
 
 
-
-
-
 def get_current_user(
-    credentials:HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     token = credentials.credentials
-    payload=verify_token(token)
-    
-    if payload is None:
-        raise HTTPException(status_code=400, detail="Invalid token!!")
-    
-    return payload["sub"]
+    payload = verify_token(token)
+
+    if payload is None or "sub" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
+    return UUID(payload["sub"])

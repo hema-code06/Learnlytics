@@ -10,18 +10,26 @@ class UserLogin(BaseModel):
     email:EmailStr
     password:str
     
-class LearningEntryCreate(BaseModel):
+    
+    
+    
+class LearningEntryBase(BaseModel):
     date:date
     hours:float
     topic:str
     notes:str | None = None
     
-class LearningEntryResponse(BaseModel):
+class LearningEntryCreate(LearningEntryBase):
+    pass
+    
+class LearningEntryUpdate(BaseModel):
+    date:date | None=None    
+    hours:float | None=None    
+    topic:str | None=None    
+    notes:str | None=None    
+    
+class LearningEntryResponse(LearningEntryBase):
     id:UUID
-    date:date
-    hours:float
-    topic:str
-    notes:str | None
     
     class Config:
         from_attributes = True

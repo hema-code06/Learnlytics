@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from .routers import auth, learning
 from .database import engine, Base
-from . import models
 
 app = FastAPI()
 
