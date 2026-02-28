@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from .routers import auth, learning
 from .database import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
 
 app = FastAPI()
+load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 

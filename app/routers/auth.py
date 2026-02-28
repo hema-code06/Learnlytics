@@ -6,6 +6,7 @@ from ..auth import hash_password, verify_password, create_access_token
 
 router = APIRouter()
 
+
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(
@@ -14,7 +15,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     hashed_password = hash_password(user.password)
 
     new_user = models.User(
@@ -43,4 +44,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": str(db_user.id)}
     )
-    return {"access_token": access_token}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
