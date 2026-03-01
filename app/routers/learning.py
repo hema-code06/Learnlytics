@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
-from datetime import timedelta, date
+from datetime import timedelta, datetime
 from uuid import UUID
 
 from .. import models, schemas
@@ -150,3 +150,25 @@ def get_weekly_streak(
 
         max_streak = max(max_streak, streak)
     return {"weekly_streak": max_streak}
+
+
+@router.get("/analytics/velocity")
+def get_learning_velocity(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    four_weeks_ago = datetime.utcnow().date() - timedelta(weeks=4)
+
+    results = db.query(
+        func.sum(models.LearningEntry.hours)
+    ).filter(
+        models.LearningEntry.user_id == user_id,
+        models.LearningEntry.date >= four_weeks_ago
+    ).scalar()
+
+    total_hours = results or 0
+    velocity = total_hours/4
+
+    return {
+        "weekly_average_hours_last_4_weeks": round(velocity, 2)
+    }
