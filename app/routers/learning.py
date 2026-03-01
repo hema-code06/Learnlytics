@@ -193,3 +193,31 @@ def get_consistency_score(
     return {
         "Consistency_score_percent": round(score, 2)
     }
+
+
+@router.get("/analytics/velocity-trend")
+def get_velocity_trend(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    results = db.query(
+        extract("year", models.LearningEntry.date).label("year"),
+        extract("week", models.LearningEntry.date).label("week"),
+        func.sum(models.LearningEntry.hours).label("total_hours")
+    ).filter(
+        models.LearningEntry.user_id == user_id
+    ).group_by(
+        "year", "week"
+    ).order_by(
+        "year", "week"
+    ).all()
+
+    data = [
+        {
+            "week": f"{int(r.year)}-W{int(r.week)}",
+            "hours": float(r.total_hours)
+        }
+        for r in results
+    ]
+
+    return data
