@@ -172,3 +172,24 @@ def get_learning_velocity(
     return {
         "weekly_average_hours_last_4_weeks": round(velocity, 2)
     }
+
+
+@router.get("/analytics/consistency")
+def get_consistency_score(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    thirty_days_ago = datetime.utcnow().date() - timedelta(days=30)
+    results = db.query(
+        func.count(func.distinct(models.LearningEntry.date))
+    ).filter(
+        models.LearningEntry.user_id == user_id,
+        models.LearningEntry.date >= thirty_days_ago
+    ).scalar()
+
+    active_days = results or 0
+    score = (active_days / 30)*100
+
+    return {
+        "Consistency_score_percent": round(score, 2)
+    }
