@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import API from "../api";
 import DashboardLayout from "../layout/DashboardLayout";
 import Card from "../components/ui/Card";
-import Heatmap from "../components/Heatmap";
 import EntryForm from "../components/EntryForm";
 import VelocityChart from "../components/VelocityChart";
 import TopicChart from "../components/TopicChart";
@@ -77,10 +76,6 @@ export default function Dashboard() {
           <EntryForm refresh={refresh} />
         </Card>
       </div>
-
-      <Card title="Learning Heatmap">
-        <Heatmap refreshKey={refreshKey} />
-      </Card>
     </DashboardLayout>
   );
 }

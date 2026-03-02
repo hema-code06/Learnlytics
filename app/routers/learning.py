@@ -86,40 +86,6 @@ def delete_entry(
     return {"message": "Entry deleted successfully"}
 
 
-@router.get("/heatmap")
-def get_heatmap(
-    db: Session = Depends(get_db),
-    user_id: UUID = Depends(get_current_user)
-):
-    results = db.query(
-        models.LearningEntry.date,
-        func.sum(models.LearningEntry.hours).label("total_hours")
-    ).filter(
-        models.LearningEntry.user_id == user_id
-    ).group_by(
-        models.LearningEntry.date
-    ).all()
-
-    if not results:
-        return []
-
-    data_dict = {r.date: r.total_hours for r in results}
-    start = min(data_dict.keys())
-    end = max(data_dict.keys())
-
-    filled = []
-    current = start
-
-    while current <= end:
-        filled.append({
-            "date": current,
-            "total_hours": data_dict.get(current, 0)
-        })
-        current += timedelta(days=1)
-
-    return filled
-
-
 @router.get("/analytics/streak")
 def get_weekly_streak(
     db: Session = Depends(get_db),

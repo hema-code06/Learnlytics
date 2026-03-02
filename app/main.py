@@ -24,4 +24,4 @@ app.include_router(learning.router, prefix="/learning", tags=["Learning"])
 
 @app.get("/")
 def root():
-    return {"message": "Learning Heatmap API Running"}
+    return {"message": "Learning Analytics API Running"}
