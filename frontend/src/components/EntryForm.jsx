@@ -61,14 +61,14 @@ export default function EntryForm({ refresh }) {
           onChange={(e) => setDate(e.target.value)}
         />
         <input
-          type="Number"
+          type="number"
           step="0.1"
           placeholder="Hours"
           value={hours}
           onChange={(e) => setHours(e.target.value)}
         />
         <input
-          type="Topic"
+          type="text"
           placeholder="Topic"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}

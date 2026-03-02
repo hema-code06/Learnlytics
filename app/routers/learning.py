@@ -191,7 +191,7 @@ def get_consistency_score(
     score = (active_days / 30)*100
 
     return {
-        "Consistency_score_percent": round(score, 2)
+        "consistency_score_percent": round(score, 2)
     }
 
 
@@ -246,3 +246,64 @@ def get_topic_breakdown(
         }
         for r in results
     ]
+
+
+@router.post("/goal")
+def set_monthly_goal(
+    target_hours: float,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    current_month = datetime.utcnow().strftime("%Y-%m")
+
+    existing = db.query(models.MonthlyGoal).filter(
+        models.MonthlyGoal.user_id == user_id,
+        models.MonthlyGoal.month == current_month,
+    ).first()
+
+    if existing:
+        existing.target_hours = target_hours
+    else:
+        new_goal = models.MonthlyGoal(
+            user_id=user_id,
+            month=current_month,
+            target_hours=target_hours
+        )
+        db.add(new_goal)
+
+    db.commit()
+    return {"message": "Goal saved successfully.."} 
+
+
+@router.get("/goal/progress")
+def get_goal_progress(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    current_month = datetime.utcnow().strftime("%Y-%m")
+
+    goal = db.query(models.MonthlyGoal).filter(
+        models.MonthlyGoal.user_id == user_id,
+        models.MonthlyGoal.month == current_month,
+    ).first()
+
+    if not goal:
+        return {"target": 0, "completed": 0, "percentage": 0}
+
+    month_start = datetime.utcnow().replace(day=1).date()
+
+    total_hours = db.query(
+        func.sum(models.LearningEntry.hours)
+    ).filter(
+        models.LearningEntry.user_id == user_id,
+        models.LearningEntry.date >= month_start
+    ).scalar() or 0
+
+    percentage = (total_hours/goal.target_hours) * \
+        100 if goal.target_hours else 0
+
+    return {
+        "target": goal.target_hours,
+        "completed": round(total_hours, 2),
+        "percentage": round(percentage, 2)
+    }

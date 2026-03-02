@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import date
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
 
 
 class UserCreate(BaseModel):

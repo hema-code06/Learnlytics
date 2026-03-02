@@ -26,7 +26,7 @@ export default function Heatmap({ refreshKey }) {
     <div>
       <h3>Learning Heatmap</h3>
       <CalendarHeatmap
-        startDate={new Date("2026-01-01")}
+        startDate={new Date(new Date().getFullYear(), 0, 1)}
         endDate={new Date()}
         values={data}
         classForValue={(value) => {

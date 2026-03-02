@@ -2,6 +2,7 @@ import Heatmap from "../components/Heatmap";
 import EntryForm from "../components/EntryForm";
 import VelocityChart from "../components/VelocityChart";
 import TopicChart from "../components/TopicChart";
+import GoalTracker from "../components/GoalTracker";
 import { useEffect, useState } from "react";
 import API from "../api";
 
@@ -31,7 +32,7 @@ export default function Dashboard() {
         setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
         setConsistency(consistencyRes.data.consistency_score_percent);
         setTrendData(trendRes.data);
-        setTrendData(topicRes.data);
+        setTopicData(topicRes.data); // FIXED
       } catch (err) {
         console.error("Analytics error:", err);
       }
@@ -56,6 +57,7 @@ export default function Dashboard() {
         <MetricCard title="Velocity" value={`${velocity} hrs/week`} />
         <MetricCard title="Consistency" value={`${consistency}%`} />
       </div>
+      <GoalTracker refreshKey={refreshKey} />
 
       <VelocityChart data={trendData} />
       <TopicChart data={topicData} />
