@@ -221,3 +221,28 @@ def get_velocity_trend(
     ]
 
     return data
+
+
+@router.get("/analytics/topic-breakdown")
+def get_topic_breakdown(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    results = db.query(
+        models.LearningEntry.topic,
+        func.sum(models.LearningEntry.hours).label("total_hours")
+    ).filter(
+        models.LearningEntry.user_id == user_id
+    ).group_by(
+        models.LearningEntry.topic
+    ).order_by(
+        func.sum(models.LearningEntry.hours).desc()
+    ).all()
+
+    return [
+        {
+            "topic": r.topic,
+            "hours": float(r.total_hours)
+        }
+        for r in results
+    ]
