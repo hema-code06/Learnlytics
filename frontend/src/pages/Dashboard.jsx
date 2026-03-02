@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
+import API from "../api";
+import DashboardLayout from "../layout/DashboardLayout";
+import Card from "../components/ui/Card";
 import Heatmap from "../components/Heatmap";
 import EntryForm from "../components/EntryForm";
 import VelocityChart from "../components/VelocityChart";
 import TopicChart from "../components/TopicChart";
 import GoalTracker from "../components/GoalTracker";
-import { useEffect, useState } from "react";
-import API from "../api";
 
 export default function Dashboard() {
   const [streak, setStreak] = useState(0);
@@ -32,7 +34,7 @@ export default function Dashboard() {
         setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
         setConsistency(consistencyRes.data.consistency_score_percent);
         setTrendData(trendRes.data);
-        setTopicData(topicRes.data); // FIXED
+        setTopicData(topicRes.data);
       } catch (err) {
         console.error("Analytics error:", err);
       }
@@ -42,49 +44,48 @@ export default function Dashboard() {
   }, [refreshKey]);
 
   return (
-    <div style={{ padding: "40px", maxWidth: "1100px", margin: "auto" }}>
-      <h1 style={{ marginBottom: "30px" }}> Learning Dashboard</h1>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "20px",
-          marginBottom: "40px",
-        }}
-      >
+    <DashboardLayout>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard title="Weekly Streak" value={`${streak} weeks`} />
         <MetricCard title="Velocity" value={`${velocity} hrs/week`} />
         <MetricCard title="Consistency" value={`${consistency}%`} />
       </div>
-      <GoalTracker refreshKey={refreshKey} />
 
-      <VelocityChart data={trendData} />
-      <TopicChart data={topicData} />
+      {/* Goal */}
+      <Card title="Monthly Goal">
+        <GoalTracker refreshKey={refreshKey} />
+      </Card>
 
-      <div style={{ marginTop: "40px" }}>
+      {/* Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card title="Weekly Learning Trend">
+          <VelocityChart data={trendData} />
+        </Card>
+
+        <Card title="Topic Breakdown">
+          <TopicChart data={topicData} />
+        </Card>
+      </div>
+
+      {/* Entry Form */}
+      <Card title="Add Learning Entry">
         <EntryForm refresh={refresh} />
-      </div>
+      </Card>
 
-      <div style={{ marginTop: "40px" }}>
+      {/* Heatmap */}
+      <Card title="Learning Activity Heatmap">
         <Heatmap refreshKey={refreshKey} />
-      </div>
-    </div>
+      </Card>
+    </DashboardLayout>
   );
 }
 
 function MetricCard({ title, value }) {
   return (
-    <div
-      style={{
-        padding: "20px",
-        borderRadius: "12px",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-        background: "#ffffff",
-      }}
-    >
-      <h4 style={{ marginBottom: "10px", color: "#555" }}>{title}</h4>
-      <h2>{value}</h2>
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      <p className="text-sm text-slate-500">{title}</p>
+      <h2 className="text-3xl font-semibold mt-2">{value}</h2>
     </div>
   );
 }
