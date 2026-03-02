@@ -3,18 +3,24 @@ import API from "../api";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css";
 
-export default function Heatmap() {
+export default function Heatmap({ refreshKey }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    API.get("/learning/heatmap").then((res) => {
-      const formatted = res.data.map((item) => ({
-        date: item.date,
-        count: item.total_hours,
-      }));
-      setData(formatted);
-    });
-  }, []);
+    const fetchHeatmap = async () => {
+      try {
+        const res = await API.get("/learning/heatmap");
+        const formatted = res.data.map((item) => ({
+          date: item.date,
+          count: item.total_hours,
+        }));
+        setData(formatted);
+      } catch (err) {
+        console.log("Heatmap fetch error:", err);
+      }
+    };
+    fetchHeatmap();
+  }, [refreshKey]);
 
   return (
     <div>

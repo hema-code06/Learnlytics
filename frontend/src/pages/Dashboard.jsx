@@ -65,7 +65,7 @@ export default function Dashboard() {
       </div>
 
       <div style={{ marginTop: "40px" }}>
-        <Heatmap key={refreshKey} />
+        <Heatmap refreshKey={refreshKey} />
       </div>
     </div>
   );
