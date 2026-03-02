@@ -7,19 +7,50 @@ export default function EntryForm({ refresh }) {
   const [topic, setTopic] = useState("");
 
   const submit = async () => {
-    await API.post("/learning", {
-      date,
-      hours: parseFloat(hours),
-      topic,
-    });
-    refresh();
+    if (!date || !hours || !topic) {
+      alert("All fields are required!!");
+      return;
+    }
+
+    try {
+      await API.post("/learning", {
+        date: date,
+        hours: Number(hours),
+        topic: topic,
+      });
+
+      setDate("");
+      setHours("");
+      setTopic("");
+
+      refresh();
+    } catch (err) {
+      console.error(err.response?.data);
+      alert("Failed to add entry");
+    }
   };
+
   return (
     <div>
       <h3>Add Entry</h3>
-      <input type="date" onChange={(e) => setDate(e.target.value)} />
-      <input type="Hours" onChange={(e) => setHours(e.target.value)} />
-      <input type="Topic" onChange={(e) => setTopic(e.target.value)} />
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+      />
+      <input
+        type="Number"
+        step="0.1"
+        placeholder="Hours"
+        value={hours}
+        onChange={(e) => setHours(e.target.value)}
+      />
+      <input
+        type="Topic"
+        placeholder="Topic"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+      />
       <button onClick={submit}>Add</button>
     </div>
   );
