@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, LogOut } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
@@ -9,34 +10,43 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 p-6 flex flex-col">
-        <h2 className="text-xl font-semibold mb-10">Learning Heatmap</h2>
+      <aside className="w-64 bg-white border-r border-slate-200 shadow-sm p-6 flex flex-col">
+        <h2 className="text-2xl font-bold text-indigo-600 mb-10">
+          LearnTrack
+        </h2>
 
-        <nav className="space-y-3 text-sm">
-          <Link className="block text-slate-600 hover:text-primary">
+        <nav className="space-y-2 text-sm">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-2 rounded-xl ${
+                isActive
+                  ? "bg-indigo-100 text-indigo-600 font-medium"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <LayoutDashboard size={18} />
             Dashboard
-          </Link>
+          </NavLink>
         </nav>
 
         <div className="mt-auto">
           <button
             onClick={logout}
-            className="w-full bg-slate-100 hover:bg-slate-200 text-sm py-2 rounded-lg"
+            className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 py-2 rounded-xl text-sm"
           >
+            <LogOut size={16} />
             Logout
           </button>
         </div>
       </aside>
 
       {/* Main */}
-      <div className="flex-1 overflow-y-auto">
-        <header className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-        </header>
-
-        <main className="p-8 space-y-8">{children}</main>
+      <div className="flex-1 overflow-y-auto p-10">
+        {children}
       </div>
     </div>
   );

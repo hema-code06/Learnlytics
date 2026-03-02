@@ -25,6 +25,7 @@ export default function Heatmap({ refreshKey }) {
   return (
     <div>
       <h3>Learning Heatmap</h3>
+      
       <CalendarHeatmap
         startDate={new Date(new Date().getFullYear(), 0, 1)}
         endDate={new Date()}

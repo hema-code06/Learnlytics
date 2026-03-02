@@ -7,6 +7,8 @@ import EntryForm from "../components/EntryForm";
 import VelocityChart from "../components/VelocityChart";
 import TopicChart from "../components/TopicChart";
 import GoalTracker from "../components/GoalTracker";
+import CountUp from "react-countup";
+import Skeleton from "../components/ui/skeleton";
 
 export default function Dashboard() {
   const [streak, setStreak] = useState(0);
@@ -45,22 +47,20 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
         <MetricCard title="Weekly Streak" value={`${streak} weeks`} />
-        <MetricCard title="Velocity" value={`${velocity} hrs/week`} />
-        <MetricCard title="Consistency" value={`${consistency}%`} />
+        <MetricCard title="Learning Velocity" value={`${velocity} hrs/week`} />
+        <MetricCard title="Consistency Score" value={`${consistency}%`} />
       </div>
 
-      {/* Goal */}
-      <Card title="Monthly Goal">
-        <GoalTracker refreshKey={refreshKey} />
-      </Card>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
         <Card title="Weekly Learning Trend">
-          <VelocityChart data={trendData} />
+          {trendData.length === 0 ? (
+            <Skeleton height="h-64" />
+          ) : (
+            <VelocityChart data={trendData} />
+          )}
         </Card>
 
         <Card title="Topic Breakdown">
@@ -68,13 +68,17 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Entry Form */}
-      <Card title="Add Learning Entry">
-        <EntryForm refresh={refresh} />
-      </Card>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+        <Card title="Monthly Goal">
+          <GoalTracker refreshKey={refreshKey} />
+        </Card>
 
-      {/* Heatmap */}
-      <Card title="Learning Activity Heatmap">
+        <Card title="Add Learning Entry">
+          <EntryForm refresh={refresh} />
+        </Card>
+      </div>
+
+      <Card title="Learning Heatmap">
         <Heatmap refreshKey={refreshKey} />
       </Card>
     </DashboardLayout>
@@ -83,9 +87,11 @@ export default function Dashboard() {
 
 function MetricCard({ title, value }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>
-      <h2 className="text-3xl font-semibold mt-2">{value}</h2>
+      <h2 className="text-4xl font-bold text-indigo-600 mt-3">
+        <CountUp end={parseFloat(value)} duration={1.5} />
+      </h2>
     </div>
   );
 }

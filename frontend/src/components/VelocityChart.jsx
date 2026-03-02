@@ -9,7 +9,9 @@ import {
 
 export default function VelocityChart({ data }) {
   return (
-    <div style={{ width: "100%", height: 300 }}>
+    <div
+      style={{ width: "100%", height: 300, stroke: "#6366F1", fill: "#6366F1" }}
+    >
       <h3>Weekly Learning Velocity</h3>
       <ResponsiveContainer>
         <LineChart data={data}>
