@@ -9,6 +9,11 @@ import GoalTracker from "../components/GoalTracker";
 import CountUp from "react-countup";
 import Skeleton from "../components/ui/skeleton";
 
+import ProductivityCard from "../components/ProductivityCard";
+import PatternCard from "../components/PatternCard";
+import InsightsPanel from "../components/InsightsPanel";
+import BadgePanel from "../components/BadgePanel";
+
 export default function Dashboard() {
   const [streak, setStreak] = useState(0);
   const [velocity, setVelocity] = useState(0);
@@ -16,26 +21,35 @@ export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [trendData, setTrendData] = useState([]);
   const [topicData, setTopicData] = useState([]);
+  const [advanced, setAdvanced] = useState(null);
 
   const refresh = () => setRefreshKey((prev) => prev + 1);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [streakRes, velocityRes, consistencyRes, trendRes, topicRes] =
-          await Promise.all([
-            API.get("/learning/analytics/streak"),
-            API.get("/learning/analytics/velocity"),
-            API.get("/learning/analytics/consistency"),
-            API.get("/learning/analytics/velocity-trend"),
-            API.get("/learning/analytics/topic-breakdown"),
-          ]);
+        const [
+          streakRes,
+          velocityRes,
+          consistencyRes,
+          trendRes,
+          topicRes,
+          advancedRes,
+        ] = await Promise.all([
+          API.get("/learning/analytics/streak"),
+          API.get("/learning/analytics/velocity"),
+          API.get("/learning/analytics/consistency"),
+          API.get("/learning/analytics/velocity-trend"),
+          API.get("/learning/analytics/topic-breakdown"),
+          API.get("/learning/analytics"),
+        ]);
 
         setStreak(streakRes.data.weekly_streak);
         setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
         setConsistency(consistencyRes.data.consistency_score_percent);
         setTrendData(trendRes.data);
         setTopicData(topicRes.data);
+        setAdvanced(advancedRes.data);
       } catch (err) {
         console.error("Analytics error:", err);
       }
@@ -76,16 +90,30 @@ export default function Dashboard() {
           <EntryForm refresh={refresh} />
         </Card>
       </div>
+      {advanced && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+          <ProductivityCard data={advanced} />
+          <PatternCard pattern={advanced.pattern} />
+        </div>
+      )}
+
+      {advanced && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+          <InsightsPanel insights={advanced.insights} />
+          <BadgePanel badges={advanced.badges} />
+        </div>
+      )}
     </DashboardLayout>
   );
 }
 
-function MetricCard({ title, value }) {
+function MetricCard({ title, value, suffix = "" }) {
+  const numericValue = typeof value === "number" ? value : 0;
   return (
     <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>
       <h2 className="text-4xl font-bold text-indigo-600 mt-3">
-        <CountUp end={parseFloat(value)} duration={1.5} />
+        <CountUp end={numericValue} duration={1.5} /> {suffix}
       </h2>
     </div>
   );

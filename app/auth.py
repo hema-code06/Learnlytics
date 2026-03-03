@@ -1,5 +1,8 @@
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+from .database import get_db
+from . import models
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 import os
@@ -15,7 +18,7 @@ security = HTTPBearer()
 
 
 def hash_password(password: str):
-    if len(password.encode("utf-8")) >72:
+    if len(password.encode("utf-8")) > 72:
         raise HTTPException(
             status_code=400,
             detail="Password too long.Maximum 72 bytes allowed."
@@ -43,15 +46,20 @@ def verify_token(token: str):
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
 ):
     token = credentials.credentials
     payload = verify_token(token)
 
     if payload is None or "sub" not in payload:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    return payload["sub"]
+    user = db.query(models.User).filter(
+        models.User.id == payload["sub"]
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return user
