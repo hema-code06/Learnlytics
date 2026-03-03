@@ -13,7 +13,7 @@ function App() {
           style: {
             borderRadius: "12px",
             background: "#1E293B",
-            color: "fff",
+            color: "#fff",
           },
         }}
       />
