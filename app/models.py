@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, Date, Float, Text, ForeignKey, DateTime, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 
@@ -60,7 +61,12 @@ class MonthlyGoal(Base):
 class Badge(Base):
     __tablename__ = "badges"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(PGUUID(as_uuid=True),
-                     ForeignKey("users.id"), nullable=False)
-    badge_name = Column(String)
-    unlocked_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(PGUUID(as_uuid=True), ForeignKey(
+        "users.id", ondelete="CASCADE"), nullable=False)
+    badge_name = Column(String, nullable=False)
+    unlocked_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    __table_args__ = (
+        UniqueConstraint("user_id", "badge_name", name="unique_user_badge"),
+    )
