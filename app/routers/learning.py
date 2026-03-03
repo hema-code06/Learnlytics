@@ -392,11 +392,14 @@ def get_advanced_analytics(
     badges = [b.badge_name for b in final_badges]
 
     return {
-        "productivity_score": score,
-        "label": productivity_label(score),
-        "pattern": pattern,
-        "insights": insights,
-        "badges": badges
+        "status": "success",
+        "data": {
+            "productivity_score": score,
+            "label": productivity_label(score),
+            "pattern": pattern,
+            "insights": insights,
+            "badges": badges
+        }
     }
 
 
