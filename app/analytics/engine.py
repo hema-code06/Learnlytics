@@ -24,9 +24,10 @@ def calculate_productivity_score(
     )
 
     if last_week_score:
-        final_score = 0.7*base_score+0.3*last_week_score
+        final_score = 0.7 * base_score + 0.3 * last_week_score
     else:
-        final_score(final_score, 2)
+        final_score = base_score
+    return round(final_score, 2)
 
 
 def productivity_label(score):
@@ -92,13 +93,14 @@ def generate_insights(productivity_score, consistency_score, velocity_score):
         })
     return insights[:3]
 
+
 def evaluate_badges(streak, total_hours, monthly_goal_completion):
     badges = []
     if streak >= 7:
         badges.append("7_day_streak")
-    if streak >=30:
+    if streak >= 30:
         badges.append("30_day_streak")
-    if total_hours >=100:
+    if total_hours >= 100:
         badges.append("100_hour_master")
     if monthly_goal_completion >= 120:
         badges.append("goal_crusher")
