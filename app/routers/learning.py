@@ -460,3 +460,21 @@ def get_user_badges(
         }
         for b in badges
     ]
+
+
+@router.get("/", response_model=list[schemas.LearningEntryResponse])
+def get_entries(
+    page: int = 1,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    offset = (page - 1) * limit
+
+    results = db.query(models.LearningEntry).filter(
+        models.LearningEntry.user_id == current_user.id
+    ).order_by(
+        models.LearningEntry.date.desc()
+    ).offset(offset).limit(limit).all()
+
+    return results
