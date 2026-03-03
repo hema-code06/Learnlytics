@@ -11,6 +11,7 @@ export default function EntryForm({ refresh }) {
   const [topic, setTopic] = useState("");
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -52,21 +53,33 @@ export default function EntryForm({ refresh }) {
     try {
       setLoading(true);
 
-      const res = await API.post("/learning/", {
-        date,
-        hours: Number(hours),
-        topic: topic.trim(),
-      });
-      setEntries((prev) =>
-        prev.map((e) => (e.id === optimisticEntry.id ? res.data : e)),
-      );
+      if (editingId) {
+        const res = await API.post(`/learning/${editingId}`, {
+          date,
+          hours: Number(hours),
+          topic: topic.trim(),
+        });
 
-      toast.success("Entry added successfully..");
+        setEntries((prev) =>
+          prev.map((e) => (e.id === editingId.id ? res.data : e)),
+        );
 
+        toast.success("Entry Updated successfully..");
+        setEditingId(null);
+      } else {
+        const res = await API.post("/learning/", {
+          date,
+          hours: Number(hours),
+          topic: topic.trim(),
+        });
+        setEntries((prev) =>
+          prev.map((e) => (e.id === optimisticEntry.id ? res.data : e)),
+        );
+        toast.success("Entry added successfully..");
+      }
       setDate("");
       setHours("");
       setTopic("");
-
       setCollapsed(true);
 
       if (refresh) refresh();
@@ -176,6 +189,7 @@ export default function EntryForm({ refresh }) {
           setDate(entry.date);
           setHours(entry.hours);
           setTopic(entry.topic);
+          setEditingId(entry.id);
           setCollapsed(false);
         }}
       />
