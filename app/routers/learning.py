@@ -3,9 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from datetime import timedelta, datetime
 from uuid import UUID
+
 from app.analytics.engine import (
-    calculate_productivity_score, productivity_label,
-    analyze_weekly_pattern, generate_insights, evaluate_badges)
+    calculate_productivity_score,
+    productivity_label,
+    analyze_weekly_pattern,
+    generate_insights,
+    evaluate_badges
+)
 
 from .. import models, schemas
 from ..database import get_db
@@ -33,13 +38,16 @@ def create_entry(
 
 @router.get("/", response_model=list[schemas.LearningEntryResponse])
 def get_entries(
+    page: int = 1,
+    limit: int = 20,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    offset = (page-1)*limit
 
     results = db.query(models.LearningEntry).filter(
         models.LearningEntry.user_id == current_user.id
-    ).order_by(models.LearningEntry.date.desc()).all()
+    ).order_by(models.LearningEntry.date.desc()).offset(offset).limit(limit).all()
 
     return results
 
@@ -58,10 +66,10 @@ def update_entry(
 
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found!")
+    update_data = updated_data.model_dump(exclude_unset=True)
 
-    for key, value in updated_data.model_dump(exclude_unset=True).items():
+    for key, value in update_data.items():
         setattr(entry, key, value)
-
     db.commit()
     db.refresh(entry)
     return entry
@@ -284,63 +292,51 @@ def get_advanced_analytics(
 
     if not entries:
         return {
-            "productivity_score": 0,
-            "label": "No Data",
-            "pattern": {},
-            "insights": [],
-            "badges": []
+            "status": "success",
+            "data": {
+                "productivity_score": 0,
+                "label": "No Data",
+                "pattern": {},
+                "insights": [],
+                "badges": []
+            }
         }
 
     # ---- Weekly Minutes (Last 7 Days) ----
     today = datetime.utcnow().date()
+    # Weekly Minutes
     seven_days_ago = today - timedelta(days=7)
-
-    weekly_entries = [
-        e for e in entries if e.date >= seven_days_ago
-    ]
-
+    weekly_entries = [e for e in entries if e.date >= seven_days_ago]
     weekly_minutes = sum(e.hours * 60 for e in weekly_entries)
-    target_weekly_minutes = 300  # 5 hours/week baseline
+    target_weekly_minutes = 300
 
-    # ---- Velocity (Last 4 Weeks Avg) ----
+    # Velocity
     four_weeks_ago = today - timedelta(weeks=4)
-
-    last_4_weeks_entries = [
-        e for e in entries if e.date >= four_weeks_ago
-    ]
-
+    last_4_weeks_entries = [e for e in entries if e.date >= four_weeks_ago]
     total_hours_4w = sum(e.hours for e in last_4_weeks_entries)
-    velocity_score = min((total_hours_4w / 20) * 100, 100)  # 20h target
+    velocity_score = min((total_hours_4w / 20) * 100, 100)
 
-    # ---- Consistency (Last 30 Days Active Days) ----
+    # Consistency
     thirty_days_ago = today - timedelta(days=30)
-
-    active_days = len({
-        e.date for e in entries if e.date >= thirty_days_ago
-    })
-
+    active_days = len({e.date for e in entries if e.date >= thirty_days_ago})
     consistency_score = (active_days / 30) * 100
 
-    # ---- Goal Completion ----
+    # Goal Completion
     current_month = today.strftime("%Y-%m")
-
     goal = db.query(models.MonthlyGoal).filter(
         models.MonthlyGoal.user_id == current_user.id,
         models.MonthlyGoal.month == current_month
     ).first()
 
     month_start = today.replace(day=1)
+    month_hours = sum(e.hours for e in entries if e.date >= month_start)
 
-    month_hours = sum(
-        e.hours for e in entries if e.date >= month_start
+    goal_completion_rate = (
+        (month_hours / goal.target_hours) * 100
+        if goal and goal.target_hours else 0
     )
 
-    if goal and goal.target_hours:
-        goal_completion_rate = (month_hours / goal.target_hours) * 100
-    else:
-        goal_completion_rate = 0
-
-    # ---- Daily Streak ----
+    # Streak
     date_set = sorted({e.date for e in entries})
     streak = 1
     max_streak = 1
@@ -352,7 +348,6 @@ def get_advanced_analytics(
             streak = 1
         max_streak = max(max_streak, streak)
 
-    # ---- Productivity Score ----
     score = calculate_productivity_score(
         weekly_minutes=weekly_minutes,
         target_weekly_minutes=target_weekly_minutes,
@@ -367,29 +362,25 @@ def get_advanced_analytics(
     calculated_badges = evaluate_badges(
         max_streak, month_hours, goal_completion_rate)
 
-    # Persist new badges
+    # Persist Badges
     existing_badges = db.query(models.Badge).filter(
         models.Badge.user_id == current_user.id
     ).all()
 
     existing_names = {b.badge_name for b in existing_badges}
-    new_badges = []
 
     for badge_name in calculated_badges:
         if badge_name not in existing_names:
-            new_badge = models.Badge(
+            db.add(models.Badge(
                 user_id=current_user.id,
                 badge_name=badge_name
-            )
-            db.add(new_badge)
-            new_badges.append(badge_name)
+            ))
+
     db.commit()
 
     final_badges = db.query(models.Badge).filter(
-        models.badge.user_id == current_user.id
+        models.Badge.user_id == current_user.id
     ).all()
-
-    badges = [b.badge_name for b in final_badges]
 
     return {
         "status": "success",
@@ -398,7 +389,7 @@ def get_advanced_analytics(
             "label": productivity_label(score),
             "pattern": pattern,
             "insights": insights,
-            "badges": badges
+            "badges": [b.badge_name for b in final_badges]
         }
     }
 
@@ -463,21 +454,3 @@ def get_user_badges(
         }
         for b in badges
     ]
-
-
-@router.get("/", response_model=list[schemas.LearningEntryResponse])
-def get_entries(
-    page: int = 1,
-    limit: int = 20,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    offset = (page - 1) * limit
-
-    results = db.query(models.LearningEntry).filter(
-        models.LearningEntry.user_id == current_user.id
-    ).order_by(
-        models.LearningEntry.date.desc()
-    ).offset(offset).limit(limit).all()
-
-    return results

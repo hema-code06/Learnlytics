@@ -41,30 +41,21 @@ export default function EntryForm({ refresh }) {
       return;
     }
 
-    const optimisticEntry = {
-      id: Date.now(), // temporary ID
-      date,
-      hours,
-      topic,
-    };
-
-    setEntries((prev) => [optimisticEntry, ...prev]);
-
     try {
       setLoading(true);
 
       if (editingId) {
-        const res = await API.post(`/learning/${editingId}`, {
+        const res = await API.put(`/learning/${editingId}`, {
           date,
           hours: Number(hours),
           topic: topic.trim(),
         });
 
         setEntries((prev) =>
-          prev.map((e) => (e.id === editingId.id ? res.data : e)),
+          prev.map((e) => (e.id === editingId ? res.data : e)),
         );
 
-        toast.success("Entry Updated successfully..");
+        toast.success("Entry updated successfully.");
         setEditingId(null);
       } else {
         const res = await API.post("/learning/", {
@@ -72,11 +63,11 @@ export default function EntryForm({ refresh }) {
           hours: Number(hours),
           topic: topic.trim(),
         });
-        setEntries((prev) =>
-          prev.map((e) => (e.id === optimisticEntry.id ? res.data : e)),
-        );
-        toast.success("Entry added successfully..");
+
+        setEntries((prev) => [res.data, ...prev]);
+        toast.success("Entry added successfully.");
       }
+
       setDate("");
       setHours("");
       setTopic("");
@@ -84,13 +75,10 @@ export default function EntryForm({ refresh }) {
 
       if (refresh) refresh();
     } catch (err) {
+      console.log("PUT error full:", err.response?.data);
       toast.error(
-        err.response?.data?.detail ||
-          "Something went wrong while adding entry.",
+        err.response?.data?.detail?.[0]?.msg || "Something went wrong.",
       );
-
-      // rollback
-      fetchEntries();
     } finally {
       setLoading(false);
     }
@@ -186,8 +174,8 @@ export default function EntryForm({ refresh }) {
         entries={entries}
         onDelete={deleteEntry}
         onEdit={(entry) => {
-          setDate(entry.date);
-          setHours(entry.hours);
+          setDate(entry.date.split("T")[0]);
+          setHours(String(entry.hours));
           setTopic(entry.topic);
           setEditingId(entry.id);
           setCollapsed(false);

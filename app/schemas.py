@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import date
+from datetime import date as DateType
 from typing import Optional
 from uuid import UUID
 
@@ -15,7 +15,7 @@ class UserLogin(BaseModel):
 
 
 class LearningEntryBase(BaseModel):
-    date: date
+    date: DateType
     hours: float
     topic: str
     notes: str | None = None
@@ -26,7 +26,7 @@ class LearningEntryCreate(LearningEntryBase):
 
 
 class LearningEntryUpdate(BaseModel):
-    date: Optional[date] = None
+    date: Optional[DateType] = None
     hours: Optional[float] = None
     topic: Optional[str] = None
     notes: Optional[str] = None

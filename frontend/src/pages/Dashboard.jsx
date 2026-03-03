@@ -55,7 +55,7 @@ export default function Dashboard() {
         setConsistency(consistencyRes.data.consistency_score_percent);
         setTrendData(trendRes.data);
         setTopicData(topicRes.data);
-        setAdvanced(advancedRes.data);
+        setAdvanced(advancedRes.data.data);
         setDailyStreak(dailyRes.data);
       } catch (err) {
         console.error("Analytics error:", err);
@@ -97,7 +97,11 @@ export default function Dashboard() {
         </Card>
 
         <Card title="Topic Breakdown">
-          <TopicChart data={topicData} />
+          {topicData.length === 0 ? (
+            <Skeleton height="h-64" />
+          ) : (
+            <TopicChart data={topicData} />
+          )}
         </Card>
       </div>
 
