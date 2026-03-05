@@ -3,14 +3,17 @@ import API from "../api";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     try {
       await API.post("/auth/register", {
+        name,
         email,
         password,
       });
@@ -30,6 +33,16 @@ export default function Register() {
         </h2>
 
         <form onSubmit={handleRegister} className="space-y-5">
+
+          <input
+            type="text"
+            placeholder="Name"
+            className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+
           <input
             type="email"
             placeholder="Email"

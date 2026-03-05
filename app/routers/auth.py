@@ -19,6 +19,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(user.password)
 
     new_user = models.User(
+        name=user.name,
         email=user.email,
         password_hash=hashed_password
     )
@@ -27,7 +28,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    return {"message": "User created successfully.."}
+    return {"message": "Profile created successfully.."}
 
 
 @router.post("/login")

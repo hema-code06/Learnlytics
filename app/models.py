@@ -14,8 +14,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String, unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
+    name = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     learning_entries = relationship(
@@ -39,8 +40,7 @@ class LearningEntry(Base):
     date = Column(Date, nullable=False)
     hours = Column(Float, nullable=False)
     topic = Column(String, nullable=False)
-    
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="learning_entries")
