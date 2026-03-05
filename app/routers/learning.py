@@ -25,16 +25,9 @@ def create_entry(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    data = entry.model_dump
-    purpose = data.pop("purpose")
-    project = data.pop("project")
+    data = entry.model_dump()
 
-    new_entry = models.LearningEntry(
-        user_id=current_user.id,
-        **data,
-        **purpose,
-        **project
-    )
+    new_entry = models.LearningEntry(user_id=current_user.id, **data)
 
     db.add(new_entry)
     db.commit()
@@ -51,11 +44,15 @@ def get_entries(
 ):
     offset = (page-1)*limit
 
-    results = db.query(models.LearningEntry).filter(
-        models.LearningEntry.user_id == current_user.id
-    ).order_by(models.LearningEntry.date.desc()).offset(offset).limit(limit).all()
-
-    return results
+    entries = (
+        db.query(models.LearningEntry)
+        .filter(models.LearningEntry.user_id == current_user.id)
+        .order_by(models.LearningEntry.date.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return entries
 
 
 @router.put("/{entry_id}", response_model=schemas.LearningEntryResponse)
@@ -72,19 +69,10 @@ def update_entry(
 
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found!")
-    update_data = updated_data.model_dump(exclude_unset=True)
 
-    if "purpose" in update_data:
-        for k, v in update_data["purpose"].items():
-            setattr(entry, k, v)
-        update_data.pop("purpose")
+    update_fields = updated_data.model_dump(exclude_unset=True)
 
-    if "project" in update_data:
-        for k, v in update_data["project"].items():
-            setattr(entry, k, v)
-        update_data.pop("project")
-
-    for key, value in update_data.items():
+    for key, value in update_fields.items():
         setattr(entry, key, value)
 
     db.commit()
@@ -116,28 +104,21 @@ def get_weekly_streak(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    results = db.query(
-        extract("year", models.LearningEntry.date).label("year"),
-        extract("week", models.LearningEntry.date).label("week")
-    ).filter(
+    entries = db.query(models.LearningEntry.date).filter(
         models.LearningEntry.user_id == current_user.id
-    ).group_by("year", "week").order_by("year", "week").all()
+    ).distinct().order_by(models.LearningEntry.date.asc()).all()
 
-    if not results:
+    if not entries:
         return {"weekly_streak": 0}
 
-    weeks = [(int(r.year), int(r.week)) for r in results]
+    weeks_sorted = sorted(
+        {e[0] - timedelta(days=e[0].weekday()) for e in entries})
     streak = max_streak = 1
-
-    for i in range(1, len(weeks)):
-        prev = weeks[i-1]
-        curr = weeks[i]
-
-        if (curr[0] == prev[0] and curr[1] == prev[1] + 1):
+    for i in range(1, len(weeks_sorted)):
+        if (weeks_sorted[i] - weeks_sorted[i-1]).days <= 7:
             streak += 1
         else:
             streak = 1
-
         max_streak = max(max_streak, streak)
 
     return {"weekly_streak": max_streak}
@@ -149,18 +130,13 @@ def get_learning_velocity(
     current_user: models.User = Depends(get_current_user)
 ):
     four_weeks_ago = datetime.utcnow().date() - timedelta(weeks=4)
-    results = db.query(
-        func.sum(models.LearningEntry.hours)
-    ).filter(
+    total_hours = db.query(func.sum(models.LearningEntry.hours)).filter(
         models.LearningEntry.user_id == current_user.id,
         models.LearningEntry.date >= four_weeks_ago
-    ).scalar()
-
-    total_hours = results or 0
-    velocity = total_hours/4
+    ).scalar() or 0
 
     return {
-        "weekly_average_hours_last_4_weeks": round(velocity, 2)
+        "weekly_average_hours_last_4_weeks": round(total_hours / 4, 2)
     }
 
 
@@ -170,17 +146,13 @@ def get_consistency_score(
     current_user: models.User = Depends(get_current_user)
 ):
     thirty_days_ago = datetime.utcnow().date() - timedelta(days=30)
-    results = db.query(
-        func.count(func.distinct(models.LearningEntry.date))
-    ).filter(
+    active_days = db.query(func.count(func.distinct(models.LearningEntry.date))).filter(
         models.LearningEntry.user_id == current_user.id,
         models.LearningEntry.date >= thirty_days_ago
-    ).scalar()
+    ).scalar() or 0
 
-    active_days = results or 0
-    score = (active_days / 30)*100
     return {
-        "consistency_score_percent": round(score, 2)
+        "consistency_score_percent": round((active_days / 30) * 100, 2)
     }
 
 
@@ -201,15 +173,7 @@ def get_velocity_trend(
         "year", "week"
     ).all()
 
-    data = [
-        {
-            "week": f"{int(r.year)}-W{int(r.week)}",
-            "hours": float(r.total_hours)
-        }
-        for r in results
-    ]
-
-    return data
+    return [{"week": f"{int(r.year)}-W{int(r.week)}", "hours": float(r.total_hours)} for r in results]
 
 
 @router.get("/analytics/topic-breakdown")

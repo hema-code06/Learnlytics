@@ -132,7 +132,7 @@ function MetricCard({ title, value, suffix }) {
     <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>
       <h2 className="text-4xl font-bold text-indigo-600 mt-3">
-        <CountUp end={value} duration={1.5} /> {suffix}
+        <CountUp end={value || 0} duration={1.5} />
       </h2>
     </div>
   );

@@ -24,9 +24,7 @@ export default function GoalTracker({ refreshKey }) {
       return;
     }
 
-    await API.post("/learning/goal", null, {
-      params: { target_hours: Number(goal) },
-    });
+    await API.post("/learning/goal", { target_hours: Number(goal) });
 
     alert("Goal saved!");
   };
