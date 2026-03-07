@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../api";
+import Card from "./ui/Card";
 
 export default function GoalTracker({ refreshKey }) {
   const [goal, setGoal] = useState("");
@@ -11,8 +12,12 @@ export default function GoalTracker({ refreshKey }) {
 
   useEffect(() => {
     const fetchProgress = async () => {
-      const res = await API.get("/learning/goal/progress");
-      setProgress(res.data);
+      try {
+        const res = await API.get("/learning/goal/progress");
+        setProgress(res.data);
+      } catch (err) {
+        console.error("Failed to fetch goal progress", err);
+      }
     };
 
     fetchProgress();
@@ -24,51 +29,62 @@ export default function GoalTracker({ refreshKey }) {
       return;
     }
 
-    await API.post("/learning/goal", { target_hours: Number(goal) });
+    try {
+      await API.post("/learning/goal", {
+        target_hours: Number(goal),
+      });
 
-    alert("Goal saved!");
+      alert("Goal saved!");
+    } catch (err) {
+      console.error("Goal save failed", err);
+    }
   };
 
   return (
-    <div style={{ marginBottom: "40px" }}>
-      <h3>Monthly Goal</h3>
+    <Card title="Monthly Goal">
 
-      <input
-        type="number"
-        placeholder="Set monthly goal (hours)"
-        value={goal}
-        onChange={(e) => setGoal(e.target.value)}
-      />
-      <button onClick={saveGoal}>Save Goal</button>
+      <div className="space-y-4">
 
-      <div style={{ marginTop: "20px" }}>
-        <p>
-          <strong>Target:</strong> {progress.target} hrs
-        </p>
-        <p>
-          <strong>Completed:</strong> {progress.completed} hrs
-        </p>
-        <p>
-          <strong>Progress:</strong> {progress.percentage}%
-        </p>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            placeholder="Set monthly goal (hours)"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            className="flex-1 border rounded-lg px-3 py-2 text-sm"
+          />
 
-        <div
-          style={{
-            height: "20px",
-            background: "#eee",
-            borderRadius: "10px",
-            overflow: "hidden",
-          }}
-        >
+          <button
+            onClick={saveGoal}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+          >
+            Save
+          </button>
+        </div>
+
+        <div className="space-y-1 text-sm text-slate-600">
+          <p>
+            <strong>Target:</strong> {progress.target} hrs
+          </p>
+
+          <p>
+            <strong>Completed:</strong> {progress.completed} hrs
+          </p>
+
+          <p>
+            <strong>Progress:</strong> {progress.percentage}%
+          </p>
+        </div>
+
+        <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
           <div
-            style={{
-              width: `${progress.percentage}%`,
-              background: "#4caf50",
-              height: "100%",
-            }}
+            className="bg-indigo-600 h-3 transition-all"
+            style={{ width: `${progress.percentage}%` }}
           />
         </div>
+
       </div>
-    </div>
+
+    </Card>
   );
 }
