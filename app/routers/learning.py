@@ -20,6 +20,37 @@ router = APIRouter()
 DEMO_USER_ID = 1
 
 
+@router.post("/topics", response_model=schemas.TopicResponse)
+def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
+    new_topic = models.Topic(**topic.model_dump())
+
+    db.add(new_topic)
+    db.commit()
+    db.refresh(new_topic)
+
+    return new_topic
+
+@router.get("/topics", response_model=list[schemas.TopicResponse])
+def get_topics(db: Session = Depends(get_db)):
+
+    topics = db.query(models.Topic).order_by(models.Topic.created_at.desc()).all()
+
+    return topics
+
+@router.delete("/topics/{topic_id}")
+def delete_topic(topic_id: UUID, db: Session = Depends(get_db)):
+
+    topic = db.query(models.Topic).filter(models.Topic.id == topic_id).first()
+
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    db.delete(topic)
+    db.commit()
+
+    return {"message": "Topic deleted"}
+
+
 @router.post("/", response_model=schemas.LearningEntryResponse)
 def create_entry(
     entry: schemas.LearningEntryCreate,
