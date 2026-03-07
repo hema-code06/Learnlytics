@@ -1,7 +1,191 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from statistics import mean, stdev
 from collections import defaultdict
 
+
+# ------------------------------
+# STREAK CALCULATIONS
+# ------------------------------
+
+def calculate_daily_streak(entries):
+    if not entries:
+        return 0
+
+    dates = sorted({e.date.date() for e in entries})
+    today = datetime.utcnow().date()
+
+    streak = 0
+    current = today
+
+    while current in dates:
+        streak += 1
+        current -= timedelta(days=1)
+
+    return streak
+
+
+def calculate_longest_streak(entries):
+    if not entries:
+        return 0
+
+    dates = sorted({e.date.date() for e in entries})
+
+    longest = 0
+    current = 1
+
+    for i in range(1, len(dates)):
+        if (dates[i] - dates[i - 1]).days == 1:
+            current += 1
+        else:
+            longest = max(longest, current)
+            current = 1
+
+    return max(longest, current)
+
+
+# ------------------------------
+# LEARNING VELOCITY
+# ------------------------------
+
+def learning_velocity(entries):
+    if not entries:
+        return 0
+
+    hours = [e.hours for e in entries]
+    return round(mean(hours), 2)
+
+
+# ------------------------------
+# CONSISTENCY SCORE
+# ------------------------------
+
+def consistency_score(entries):
+    if len(entries) < 2:
+        return 50
+
+    hours = [e.hours for e in entries]
+
+    variability = stdev(hours)
+
+    score = max(0, 100 - (variability * 20))
+
+    return round(score, 2)
+
+
+# ------------------------------
+# TOPIC BREAKDOWN
+# ------------------------------
+
+def topic_breakdown(entries):
+    topic_map = defaultdict(float)
+
+    for e in entries:
+        topic_map[e.topic] += e.hours
+
+    total = sum(topic_map.values())
+
+    return [
+        {
+            "topic": k,
+            "hours": v,
+            "percentage": round((v / total) * 100, 2) if total else 0
+        }
+        for k, v in topic_map.items()
+    ]
+
+
+# ------------------------------
+# STUDY TIME AGGREGATION
+# ------------------------------
+
+def study_time(entries, mode="daily"):
+    data = defaultdict(float)
+
+    for e in entries:
+
+        if mode == "daily":
+            key = e.date.strftime("%H")
+
+        elif mode == "weekly":
+            key = e.date.strftime("%A")
+
+        elif mode == "monthly":
+            key = e.date.strftime("%d")
+
+        else:
+            key = e.date.strftime("%Y-%m")
+
+        data[key] += e.hours
+
+    return dict(data)
+
+
+# ------------------------------
+# WEEKLY PATTERN
+# ------------------------------
+
+def analyze_weekly_pattern(entries):
+    day_map = defaultdict(int)
+
+    for entry in entries:
+        day = entry.date.strftime("%A")
+        day_map[day] += entry.hours * 60
+
+    if not day_map:
+        return {}
+
+    dominant_day = max(day_map, key=day_map.get)
+
+    weekday_minutes = sum(
+        v for k, v in day_map.items() if k not in ["Saturday", "Sunday"]
+    )
+
+    weekend_minutes = sum(
+        v for k, v in day_map.items() if k in ["Saturday", "Sunday"]
+    )
+
+    ratio = weekday_minutes / weekend_minutes if weekend_minutes else 999
+
+    learning_type = (
+        "Weekday-focused"
+        if ratio > 2
+        else "Weekend warrior"
+        if ratio < 0.5
+        else "Balanced"
+    )
+
+    values = list(day_map.values())
+
+    consistency_type = (
+        "Burst Learner"
+        if len(values) > 1 and stdev(values) > mean(values)
+        else "Structured"
+    )
+
+    return {
+        "dominant_day": dominant_day,
+        "learning_type": learning_type,
+        "consistency_type": consistency_type,
+    }
+
+
+# ------------------------------
+# LEARNING OVERVIEW
+# ------------------------------
+
+def learning_overview(entries):
+    total_tasks = len(entries)
+    total_points = sum(int(e.hours * 10) for e in entries)
+
+    return {
+        "tasks_completed": total_tasks,
+        "points_earned": total_points,
+    }
+
+
+# ------------------------------
+# PRODUCTIVITY SCORE
+# ------------------------------
 
 def calculate_productivity_score(
     weekly_minutes,
@@ -42,37 +226,35 @@ def productivity_label(score):
     else:
         return "Needs Structure"
 
+# ------------------------------
+# MONTHLY GOAL
+# ------------------------------
 
-def analyze_weekly_pattern(entries):
-    day_map = defaultdict(int)
-    for entry in entries:
-        day = entry.date.strftime("%A")
-        day_map[day] += entry.hours * 60
 
-    if not day_map:
-        return {}
+def monthly_goal_progress(entries, monthly_goal_hours):
 
-    dominant_day = max(day_map, key=day_map.get)
-    weekday_minutes = sum(v for k, v in day_map.items()
-                          if k not in ["Saturday", "Sunday"])
-    weekend_minutes = sum(v for k, v in day_map.items()
-                          if k in ["Saturday", "Sunday"])
-    ratio = weekday_minutes / weekend_minutes if weekend_minutes > 0 else 999
+    now = datetime.utcnow()
 
-    learning_type = "Weekday-focused" if ratio > 2 else "Weekend warrior" if ratio < 0.5 else "Balanced"
-    values = list(day_map.values())
-    consistency_type = "Burst Learner" if len(values) > 1 and stdev(
-        values) > mean(values) else "Structured"
+    month_entries = [
+        e for e in entries
+        if e.date.month == now.month and e.date.year == now.year
+    ]
+
+    total_hours = sum(e.hours for e in month_entries)
+
+    completion = (total_hours / monthly_goal_hours) * \
+        100 if monthly_goal_hours else 0
 
     return {
-        "dominant_day": dominant_day,
-        "learning_type": learning_type,
-        "consistency_type": consistency_type
+        "hours_completed": total_hours,
+        "goal": monthly_goal_hours,
+        "completion_rate": round(completion, 2)
     }
 
 
 def generate_insights(productivity_score, consistency_score, velocity_score):
     insights = []
+
     if consistency_score < 50:
         insights.append({
             "id": "low_consistency",
@@ -93,8 +275,12 @@ def generate_insights(productivity_score, consistency_score, velocity_score):
         })
     return insights[:3]
 
+# ------------------------------
+# BADGES / ACHIEVEMENTS
+# ------------------------------
 
-def evaluate_badges(streak, total_hours, monthly_goal_completion):
+
+def evaluate_badges(streak, total_hours, monthly_goal_completion, projects_completed):
     badges = []
     if streak >= 7:
         badges.append("7_day_streak")
@@ -104,4 +290,6 @@ def evaluate_badges(streak, total_hours, monthly_goal_completion):
         badges.append("100_hour_master")
     if monthly_goal_completion >= 120:
         badges.append("goal_crusher")
+    if projects_completed >= 3:
+        badges.append("project-trio")
     return badges
